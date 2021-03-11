@@ -1,0 +1,304 @@
+
+
+<% query_options = nil unless defined?(query_options) %>
+<% query_options ||= {} %>
+
+<%= form_tag({ }, :data => {:cm_url => issues_context_menu_path}) do -%>
+<%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
+<%= query_columns_hidden_tags(query) %>
+
+<% if params['v'] %>
+    <% cols = params['v']['assigned_to_id'].select { |col| /\d/ === col }.uniq %>
+    <div class="autoscroll">
+
+        <script>
+            $(function() {
+
+                $('.d-col__content').sortable({
+                    connectWith: '.d-col__content',
+                    start: (event, ui) => {
+                        const user = $(ui.item).closest('.d-col').data('user');
+                        $(ui.item).data('owner', user);
+                    },
+                    stop: (event, ui) => {
+                        const issues = $(ui.item).data('issues');
+                        const user = $(ui.item).closest('.d-col').data('user');
+                        const owner = $(ui.item).data('owner');
+
+                        if (user !== owner) {
+                            $.ajax({
+                                type: "POST",
+                                url: "/workers",
+                                data: { issue_id: issues, assigned_to: user },
+                                success: (data) => {
+                                    if (data == 'fail') {
+                                        document.location.reload();
+                                    }
+                                }
+                            });
+                        }
+
+                        $(ui.item).data('owner', '');
+                    }
+                });
+
+                $('.d-col__content').disableSelection();
+
+            });
+        </script>
+
+        <style>
+            .d-table > * {
+              box-sizing: border-box;
+            }
+
+            .d-table {
+              font-size: 10px;
+              font-family: "helvetica neue", helvetica, arial, sans-serif;
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(19em, 30em));
+              gap: 0.5em;
+              grid-auto-flow: column;
+            }
+
+            .d-col {
+              min-width: 19em;
+            }
+            .d-col__content {
+              height: max-content;
+              min-height: 150px;
+            }
+            .d-col__header {
+              border-radius: 0.5em;
+              display: block;
+              text-align: center;
+              background-color: #eee;
+              margin: 0;
+            }
+            .d-col__header a {
+              display: block;
+              padding: 0.5em 1em;
+              font-size: 1.6em;
+              font-weight: bold;
+              color: #3d454c;
+              transition: all 0.5s ease-out;
+              text-decoration: none;
+            }
+            .d-col__header a:hover {
+              color: #000;
+            }
+            .d-col-item {
+              margin: 1em 0.5em;
+              background-color: #FBFBFB;
+              border: 1px solid #D0D0D0;
+              border-radius: 0.5em;
+              position: relative;
+              overflow: hidden;
+              box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.15);
+              transition: transform 0.3s;
+            }
+            .d-col-item--Critical {
+              background-color: #FFD4D4;
+              border: 1px solid #BF4545;
+            }
+            .d-col-item--Critical .d-col-item__content {
+              background-color: #FB8E8E;
+            }
+            .d-col-item--Immediate {
+              background-color: #FFECEC;
+              border: 1px solid #D09696;
+            }
+            .d-col-item--Immediate .d-col-item__content {
+              background-color: #FFD4D4;
+            }
+            .d-col-item--Urgent {
+              background-color: #FFF9F2;
+              border: 1px solid #ECC385;
+            }
+            .d-col-item--Urgent .d-col-item__content {
+              background-color: #FFEAD1;
+            }
+            .d-col-item__header, .d-col-item__footer {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+              grid-gap: 0.5em;
+              padding: 0.5em;
+            }
+            .d-col-item__nb-title {
+              color: #737373;
+              font-size: 1em;
+            }
+            .d-col-item__nb-text {
+              font-size: 1.2em;
+            }
+            .d-col-item__nb-text span {
+              color: #989898;
+            }
+            .d-col-item__content {
+              background-color: #ECEBEB;
+              padding: 0.5em;
+              font-size: 1.6em;
+            }
+            .d-col-item__content a {
+              color: #3D454C;
+            }
+            .d-col-item__progress {
+              overflow: hidden;
+              position: relative;
+              margin: 0 0.5em 0.5em 0.5em;
+              border-radius: 0.3em;
+              background: #D7D5D5;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 1.2em;
+              font-weight: bold;
+              color: #ffffff;
+            }
+            .d-col-item__progress-bar {
+              position: absolute;
+              top: 0;
+              left: 0;
+              bottom: 0;
+              z-index: 1;
+              border-radius: 0 0.3em 0.3em 0;
+              background: #90B9CD;
+            }
+            .d-col-item__progress-value {
+              position: relative;
+              z-index: 2;
+            }
+
+            .ui-sortable-handle {
+              cursor: grab;
+            }
+
+            .ui-sortable-helper {
+              box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
+              cursor: grabbing;
+              transform: rotateZ(-3deg);
+            }
+
+            .ui-sortable-placeholder {
+              background-color: #FBFBFB;
+              border: 1px dashed #D0D0D0;
+              box-shadow: none !important;
+              visibility: visible !important;
+            }
+
+            .scale-switcher {
+              font-family: "helvetica neue", helvetica, arial, sans-serif;
+              display: grid;
+              grid-template-columns: 24px 60px 24px;
+              height: 24px;
+              margin: 10px 0;
+            }
+            .scale-switcher_btn {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #eee;
+              border: 1px solid #D0D0D0;
+              font-weight: bold;
+            }
+            .scale-switcher_btn--minus {
+              border-radius: 5px 0 0 5px;
+            }
+            .scale-switcher_btn--plus {
+              border-radius: 0 5px 5px 0;
+            }
+            .scale-switcher__count {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-top: 1px solid #D0D0D0;
+              border-bottom: 1px solid #D0D0D0;
+            }
+        </style>
+
+        <div class="scale-switcher">
+            <button type="button" class="scale-switcher_btn scale-switcher_btn--minus" id="scale-switcher-minus">-</button>
+            <div class="scale-switcher__count" id="scale-switcher-count" data-count="10">100%</div>
+            <button type="button" class="scale-switcher_btn scale-switcher_btn--plus" id="scale-switcher-plus">+</button>
+        </div>
+        <div class="d-table" id="scale-table">
+            <% cols.each do |user| %>
+                <div class="d-col" data-user="<%= user %>">
+                    <div class="d-col__header">
+                        <a href="/users/<%= user %>" target="_blank">
+                            <%=
+                                unless name = User.find_by_id(user)
+                                    unless name = Group.find_by_id(user)
+                                        name = 'n/a'
+                                    end
+                                end
+                                name
+                            %>
+                        </a>
+                    </div>
+                    <div class="d-col__content">
+                        <% issue = @issues.select{ |i| i.assigned_to_id == user.to_i }.sort_by{ |i| -i[:priority_id]} %>
+                        <% issue.each do | i | %>
+                            <div class="d-col-item d-col-item--<%= i.priority %> draggable" data-issues="<%= i.id %>">
+                                <div class="d-col-item__header">
+                                    <div class="d-col-item__nb">
+                                        <div class="d-col-item__nb-title">Project</div>
+                                        <div class="d-col-item__nb-text"><%= i.project %></div>
+                                    </div>
+
+                                </div>
+                                <div class="d-col-item__content">
+                                    <a href="/issues/<%= i.id %>" target="_blank"><%= i %></a>
+                                </div>
+                                <div class="d-col-item__footer">
+                                    <div class="d-col-item__nb">
+                                        <div class="d-col-item__nb-title">Status</div>
+                                        <div class="d-col-item__nb-text"><%= i.status %></div>
+                                    </div>
+                                    <div class="d-col-item__nb">
+                                        <div class="d-col-item__nb-title">DD / Last update</div>
+                                        <div class="d-col-item__nb-text"><%= i.created_on.strftime("%F") %> / <span><%= i.updated_on.strftime("%F") %></span></div>
+                                    </div>
+                                </div>
+                                <div class="d-col-item__progress">
+                                    <div class="d-col-item__progress-bar" style="width: <%= i.done_ratio %>%"></div>
+                                    <div class="d-col-item__progress-value"><%= i.done_ratio %>%</div>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            <% end %>
+        </div>
+    </div>
+    <script>
+        (function (){
+            var minus = document.getElementById('scale-switcher-minus');
+            var plus = document.getElementById('scale-switcher-plus');
+            var count = document.getElementById('scale-switcher-count');
+            var scaleTable = document.getElementById('scale-table');
+            var currentCount = count.dataset.count;
+
+            minus.addEventListener('click', function () {
+                if (currentCount > 1 && currentCount <= 10) {
+                    --currentCount;
+                    changeCounter(currentCount);
+                }
+            });
+
+            plus.addEventListener('click', function () {
+                if (currentCount >= 1 && currentCount < 10) {
+                    ++currentCount;
+                    changeCounter(currentCount);
+                }
+            });
+
+            function changeCounter() {
+                count.innerText = currentCount * 10 + '%';
+                scaleTable.style.fontSize = currentCount + 'px';
+            }
+        })();
+    </script>
+
+<% end %>
+<% end -%>
