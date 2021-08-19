@@ -1,3 +1,5 @@
+<%= javascript_include_tag "application", :plugin => 'redmine_workers' %>
+
 <h2><%= @query.new_record? ? l(:label_issue_plural) : @query.name %></h2>
 <% html_title(@query.new_record? ? l(:label_issue_plural) : @query.name) %>
 
